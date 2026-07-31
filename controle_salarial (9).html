@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle Salarial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --cream:#FBF1EC; --rose-deep:#B23A66; --rose-mid:#D97AA0; --rose-soft:#F3D3DF;
+    --rose-pale:#FCE9EF; --plum:#3A2A33; --plum-soft:#7A6670; --gold:#C89B4A;
+    --sage:#6E8E76; --line:#EBD3DC; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html, body{max-width:100%; overflow-x:hidden;}
+  body{margin:0; background:var(--cream); color:var(--plum); font-family:'Work Sans', sans-serif; padding:32px 20px 60px;}
+  .wrap{max-width:1100px; width:100%; margin:0 auto;}
+
+  .hero{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:24px; margin-bottom:20px;}
+  .hero h1{font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:52px; margin:0; color:var(--rose-deep); line-height:1;}
+  .hero .sub{font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--plum-soft); margin-top:6px; font-weight:600;}
+
+  .tabs{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:28px;}
+  .tab{padding:9px 16px; border-radius:999px; font-size:13px; font-weight:600; background:var(--white); color:var(--plum-soft);
+       border:1px solid var(--line); cursor:pointer; display:flex; align-items:center; gap:8px; transition:.15s;}
+  .tab:hover{border-color:var(--rose-mid);}
+  .tab.active{background:var(--rose-deep); color:var(--white); border-color:var(--rose-deep);}
+  .tab .del{opacity:.6; font-size:11px;}
+  .tab .del:hover{opacity:1;}
+  .tab-add{padding:9px 16px; border-radius:999px; font-size:13px; font-weight:700; background:var(--rose-pale);
+       color:var(--rose-deep); border:1px dashed var(--rose-mid); cursor:pointer;}
+  .tab-add:hover{background:var(--rose-soft);}
+
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:28px;}
+  .stat{background:var(--white); border-radius:18px; padding:20px 22px; border:1px solid var(--line); position:relative; overflow:hidden;}
+  .stat::before{content:""; position:absolute; top:0; left:0; width:6px; height:100%;}
+  .stat.recebido::before{background:var(--rose-mid);}
+  .stat.despesa::before{background:var(--plum-soft);}
+  .stat.saldo::before{background:var(--sage);}
+  .stat-label{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--plum-soft); font-weight:600;}
+  .stat-value{font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:600; margin-top:8px;}
+  .stat.saldo .stat-value{color:var(--sage);}
+
+  .grid{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+  @media (max-width:820px){ .grid{grid-template-columns:1fr;} .stats{grid-template-columns:1fr;} }
+
+  .card{background:var(--white); border-radius:18px; border:1px solid var(--line); padding:22px 24px; margin-bottom:20px;}
+  .card h2{font-family:'Fraunces', serif; font-weight:600; font-size:19px; margin:0 0 16px; color:var(--rose-deep);
+           display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .card h2 .count{font-family:'IBM Plex Mono', monospace; font-size:12px; background:var(--rose-pale); color:var(--rose-deep);
+                   padding:2px 9px; border-radius:20px; font-weight:600;}
+  .add-btn{font-size:12px; font-weight:700; color:var(--rose-deep); background:var(--rose-pale); border:1px dashed var(--rose-mid);
+            border-radius:8px; padding:5px 10px; cursor:pointer;}
+  .add-btn:hover{background:var(--rose-soft);}
+
+  table{width:100%; border-collapse:collapse; table-layout:fixed;}
+  td{padding:8px 4px; font-size:14px; border-bottom:1px solid var(--rose-pale); vertical-align:middle; overflow:hidden;}
+  tr:last-child td{border-bottom:none;}
+  td.name{width:auto;}
+  td.name input{width:100%; border:none; background:transparent; font-size:14px; color:var(--plum); font-family:'Work Sans'; padding:4px 2px;
+                overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  td.name input:focus{outline:none; background:var(--rose-pale); border-radius:6px;}
+  td.val{width:120px; text-align:right; font-family:'IBM Plex Mono', monospace; font-weight:500; white-space:nowrap;}
+  td.val input{width:100%; max-width:104px; text-align:right; font-family:'IBM Plex Mono', monospace; font-size:14px; border:1px solid var(--line);
+               border-radius:8px; padding:5px 8px; color:var(--plum); background:var(--rose-pale);}
+  td.val input:focus{outline:2px solid var(--rose-mid); background:var(--white);}
+  tr.total td{font-weight:700; padding-top:12px; border-top:2px solid var(--rose-soft); border-bottom:none;}
+  tr.total td.val{color:var(--rose-deep); font-size:15px;}
+  .chk{width:17px; height:17px; accent-color:var(--rose-deep); cursor:pointer; display:block; margin:0 auto;}
+  td.box{width:32px; text-align:center; overflow:visible; padding:8px 2px;}
+  td.rm{width:28px; text-align:center; overflow:visible;}
+  .rm-btn{color:var(--plum-soft); cursor:pointer; font-size:15px; border:none; background:none;}
+  .rm-btn:hover{color:var(--rose-deep);}
+
+  .charts{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:600px){.charts{grid-template-columns:1fr;}}
+  .chart-box{position:relative; height:220px; width:100%;}
+  canvas{max-width:100%;}
+  .legend-note{font-size:12px; color:var(--plum-soft); margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);}
+  .ring-wrap{display:flex; align-items:center; gap:18px;}
+  .ring-label{font-size:13px; color:var(--plum-soft);}
+  .ring-label b{display:block; font-family:'IBM Plex Mono', monospace; font-size:22px; color:var(--rose-deep); font-weight:600;}
+  .save-note{font-size:11px; color:var(--plum-soft); text-align:center; margin-top:10px;}
+  tr.fixed td.name input{font-weight:600;}
+  .hora-extra{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-top:2px; margin-bottom:14px; padding:10px 12px;
+    background:var(--rose-pale); border:1px dashed var(--rose-mid); border-radius:10px;
+  }
+  .hora-extra .he-label{font-size:13px; color:var(--plum-soft); font-weight:600;}
+  .hora-extra .he-label span{display:block; font-size:11px; font-weight:400; color:var(--plum-soft); margin-top:2px;}
+  .hora-extra input{width:100px; text-align:right; font-family:'IBM Plex Mono', monospace; font-size:14px;
+       border:1px solid var(--line); border-radius:8px; padding:5px 8px; color:var(--plum); background:var(--white);}
+  .hora-extra input:focus{outline:2px solid var(--rose-mid);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1 id="monthTitle">—</h1>
+      <div class="sub">Controle Salarial</div>
+    </div>
+    <div class="tabs" id="tabsWrap"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat recebido"><div class="stat-label">Total Recebido</div><div class="stat-value" id="statRecebido">R$ 0,00</div></div>
+    <div class="stat despesa"><div class="stat-label">Total Despesas</div><div class="stat-value" id="statDespesa">R$ 0,00</div></div>
+    <div class="stat saldo"><div class="stat-label">Saldo Disponível</div><div class="stat-value" id="statSaldo">R$ 0,00</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="col-left">
+      <div class="card">
+        <h2>Recebimentos <span class="count" id="cRec">0</span><button class="add-btn" onclick="addItem('recebimentos')">+ item</button></h2>
+        <div class="hora-extra">
+          <div class="he-label">Hora Extra<span>não somada — já incluída no Salário dia 30</span></div>
+          <input type="text" id="horaExtraInput" onchange="editHoraExtra(this.value)">
+        </div>
+        <table id="tblRecebimentos"></table>
+      </div>
+      <div class="card">
+        <h2>Benefícios <span class="count" id="cBen">0</span><button class="add-btn" onclick="addItem('beneficios')">+ item</button></h2>
+        <table id="tblBeneficios"></table>
+      </div>
+      <div class="card">
+        <div class="ring-wrap">
+          <canvas id="ringChart" width="110" height="110" style="max-height:110px;max-width:110px;"></canvas>
+          <div class="ring-label">% do recebido que sobrou no mês<br><b id="ringPct">0%</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="card">
+        <h2>Despesas <span class="count" id="cDesp">0</span><button class="add-btn" onclick="addItem('despesas')">+ item</button></h2>
+        <table id="tblDespesas"></table>
+      </div>
+      <div class="card">
+        <h2>Resumo Visual</h2>
+        <div class="charts">
+          <div class="chart-box"><canvas id="barChart"></canvas></div>
+          <div class="chart-box"><canvas id="pieChart"></canvas></div>
+        </div>
+      </div>
+      <div class="save-note" id="saveNote"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const STORAGE_KEY = "salario:months_v1";
+
+function fixedReceitas(){
+  return [
+    {nome:"Salário - dia 30", nota:"já inclui hora extra", valor:0, ok:false, fixed:true},
+    {nome:"Salário - dia 15", nota:"", valor:0, ok:false, fixed:true},
+  ];
+}
+function fixedBeneficios(){
+  return [
+    {nome:"Vale Refeição", nota:"", valor:0, ok:false, fixed:true},
+  ];
+}
+function blankMonth(){
+  return { recebimentos:fixedReceitas(), beneficios:fixedBeneficios(), despesas:[], horaExtra:0 };
+}
+
+// Dados iniciais (zerados — preencha com seus próprios valores)
+let months = {
+  "Agosto 2026": {
+    recebimentos:[
+      {nome:"Salário - dia 30", nota:"já inclui hora extra", valor:0, ok:false, fixed:true},
+      {nome:"Salário - dia 15", nota:"", valor:0, ok:false, fixed:true},
+    ],
+    beneficios:[
+      {nome:"Vale Refeição", nota:"", valor:0, ok:false, fixed:true},
+    ],
+    despesas:[],
+    horaExtra: 0
+  }
+};
+let monthOrder = ["Agosto 2026"];
+let currentMonth = "Agosto 2026";
+
+const fmt = v => "R$ " + (v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+let barChart, pieChart, ringChart;
+let saveTimer = null;
+
+async function storageGet(key){
+  if(window.storage){
+    try{ const res = await window.storage.get(key, false); return res ? res.value : null; }
+    catch(e){ return null; }
+  }
+  try{ return window.localStorage.getItem(key); }catch(e){ return null; }
+}
+async function storageSet(key, value){
+  if(window.storage){
+    try{ await window.storage.set(key, value, false); return true; }catch(e){ return false; }
+  }
+  try{ window.localStorage.setItem(key, value); return true; }catch(e){ return false; }
+}
+
+async function loadState(){
+  try{
+    const value = await storageGet(STORAGE_KEY);
+    if(value){
+      const parsed = JSON.parse(value);
+      months = parsed.months; monthOrder = parsed.monthOrder; currentMonth = parsed.currentMonth;
+    }
+  }catch(e){ /* nada salvo ainda, usa os dados iniciais */ }
+  renderAll();
+}
+
+function scheduleSave(){
+  document.getElementById('saveNote').textContent = "Salvando...";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    const ok = await storageSet(STORAGE_KEY, JSON.stringify({months, monthOrder, currentMonth}));
+    document.getElementById('saveNote').textContent = ok
+      ? "Alterações salvas ✓"
+      : "Não consegui salvar — suas alterações podem se perder ao recarregar.";
+  }, 500);
+}
+
+function nextMonthLabel(){
+  const last = monthOrder[monthOrder.length-1];
+  const [nome, ano] = last.split(" ");
+  let idx = MESES.indexOf(nome);
+  let year = parseInt(ano);
+  idx++; if(idx>11){idx=0; year++;}
+  return `${MESES[idx]} ${year}`;
+}
+
+function addMonth(){
+  const label = nextMonthLabel();
+  if(months[label]) { switchMonth(label); return; }
+  // copia despesas fixas do mês anterior (mantém nomes/valores, desmarca como não pago), zera recebimentos/benefícios
+  const prev = months[currentMonth];
+  months[label] = {
+    recebimentos: fixedReceitas(),
+    beneficios: fixedBeneficios(),
+    despesas: prev.despesas.map(d => ({nome:d.nome, nota:d.nota, valor:d.valor, ok:false})),
+    horaExtra: 0
+  };
+  monthOrder.push(label);
+  switchMonth(label);
+}
+
+function removeMonth(label, ev){
+  ev.stopPropagation();
+  if(monthOrder.length<=1) return;
+  if(!confirm(`Remover o mês "${label}"? Essa ação não pode ser desfeita.`)) return;
+  delete months[label];
+  monthOrder = monthOrder.filter(m=>m!==label);
+  if(currentMonth===label) currentMonth = monthOrder[monthOrder.length-1];
+  renderAll(); scheduleSave();
+}
+
+function switchMonth(label){
+  currentMonth = label;
+  renderAll(); scheduleSave();
+}
+
+function addItem(kind){
+  months[currentMonth][kind].push({nome:"Novo item", nota:"", valor:0, ok:false});
+  renderAll(); scheduleSave();
+}
+function removeItem(kind, i){
+  months[currentMonth][kind].splice(i,1);
+  renderAll(); scheduleSave();
+}
+function toggleItem(kind, i){
+  months[currentMonth][kind][i].ok = !months[currentMonth][kind][i].ok;
+  renderAll(); scheduleSave();
+}
+function editName(kind, i, val){
+  months[currentMonth][kind][i].nome = val;
+  scheduleSave();
+}
+function editValor(kind, i, val){
+  const parsed = parseFloat(String(val).replace(',','.'));
+  months[currentMonth][kind][i].valor = isNaN(parsed) ? 0 : parsed;
+  renderAll(); scheduleSave();
+}
+function editHoraExtra(val){
+  const parsed = parseFloat(String(val).replace(',','.'));
+  months[currentMonth].horaExtra = isNaN(parsed) ? 0 : parsed;
+  scheduleSave();
+}
+
+function renderTable(tableId, kind){
+  const arr = months[currentMonth][kind];
+  const el = document.getElementById(tableId);
+  let rows = "";
+  arr.forEach((item, i) => {
+    rows += `<tr class="${item.fixed?'fixed':''}">
+      <td class="box"><input type="checkbox" class="chk" ${item.ok?'checked':''} onchange="toggleItem('${kind}',${i})"></td>
+      <td class="name"><input type="text" value="${item.nome.replace(/"/g,'&quot;')}" ${item.fixed?'readonly':''} onchange="editName('${kind}',${i},this.value)"></td>
+      <td class="val"><input type="text" value="${item.valor.toFixed(2)}" onchange="editValor('${kind}',${i},this.value)"></td>
+      <td class="rm">${item.fixed ? '' : `<button class="rm-btn" onclick="removeItem('${kind}',${i})" title="Remover">×</button>`}</td>
+    </tr>`;
+  });
+  const total = arr.reduce((s,i)=>s+i.valor,0);
+  rows += `<tr class="total"><td></td><td class="name">Total</td><td class="val">${fmt(total)}</td><td></td></tr>`;
+  el.innerHTML = rows;
+  return total;
+}
+
+function renderTabs(){
+  const wrap = document.getElementById('tabsWrap');
+  let html = "";
+  monthOrder.forEach(label=>{
+    const active = label===currentMonth ? "active" : "";
+    html += `<div class="tab ${active}" onclick="switchMonth('${label}')">${label}
+      ${monthOrder.length>1 ? `<span class="del" onclick="removeMonth('${label}', event)">×</span>` : ''}
+      </div>`;
+  });
+  html += `<div class="tab-add" onclick="addMonth()">+ Próximo mês</div>`;
+  wrap.innerHTML = html;
+}
+
+function renderAll(){
+  renderTabs();
+  document.getElementById('monthTitle').textContent = currentMonth.split(" ")[0];
+  document.getElementById('horaExtraInput').value = (months[currentMonth].horaExtra||0).toFixed(2);
+
+  const totalRec = renderTable('tblRecebimentos', 'recebimentos');
+  const totalBen = renderTable('tblBeneficios', 'beneficios');
+  const totalDesp = renderTable('tblDespesas', 'despesas');
+
+  document.getElementById('cRec').textContent = months[currentMonth].recebimentos.length;
+  document.getElementById('cBen').textContent = months[currentMonth].beneficios.length;
+  document.getElementById('cDesp').textContent = months[currentMonth].despesas.length;
+
+  const saldo = totalRec - totalDesp;
+  document.getElementById('statRecebido').textContent = fmt(totalRec);
+  document.getElementById('statDespesa').textContent = fmt(totalDesp);
+  document.getElementById('statSaldo').textContent = fmt(saldo);
+
+  const pct = totalRec > 0 ? Math.max(0, Math.min(100, (saldo/totalRec)*100)) : 0;
+  document.getElementById('ringPct').textContent = pct.toFixed(0) + "%";
+
+  updateCharts(totalRec, totalDesp, saldo, pct);
+}
+
+function updateCharts(totalRec, totalDesp, saldo, pct){
+  const despesas = months[currentMonth].despesas;
+  const barData = [totalRec, totalDesp, saldo];
+  const pieLabels = despesas.map(d=>d.nome);
+  const pieData = despesas.map(d=>d.valor);
+  const roseShades = ['#B23A66','#D97AA0','#E8A0BF','#F3C7D8','#7A6670','#C89B4A','#9C6B85','#E2B6C9'];
+
+  if(!barChart){
+    barChart = new Chart(document.getElementById('barChart'), {
+      type:'bar',
+      data:{ labels:['Recebido','Despesas','Saldo'], datasets:[{ data:barData, backgroundColor:['#D97AA0','#7A6670','#6E8E76'], borderRadius:8 }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+    pieChart = new Chart(document.getElementById('pieChart'), {
+      type:'doughnut',
+      data:{ labels:pieLabels, datasets:[{ data:pieData, backgroundColor:roseShades, borderWidth:2, borderColor:'#FBF1EC' }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{
+        legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:10},
+          generateLabels: (chart) => chart.data.labels.map((label,i) => ({
+            text: `${label}: ${fmt(chart.data.datasets[0].data[i])}`,
+            fillStyle: chart.data.datasets[0].backgroundColor[i],
+            strokeStyle: chart.data.datasets[0].backgroundColor[i],
+            index:i
+          }))
+        }},
+        tooltip:{ callbacks:{ label: (ctx) => `${ctx.label}: ${fmt(ctx.raw)}` } }
+      }}
+    });
+    ringChart = new Chart(document.getElementById('ringChart'), {
+      type:'doughnut',
+      data:{ datasets:[{ data:[pct, 100-pct], backgroundColor:['#B23A66', '#F3D3DF'], borderWidth:0 }]},
+      options:{ cutout:'75%', plugins:{legend:{display:false}, tooltip:{enabled:false}} }
+    });
+  } else {
+    barChart.data.datasets[0].data = barData; barChart.update();
+    pieChart.data.labels = pieLabels; pieChart.data.datasets[0].data = pieData; pieChart.update();
+    ringChart.data.datasets[0].data = [pct, 100-pct]; ringChart.update();
+  }
+}
+
+loadState();
+</script>
+</body>
+</html>
